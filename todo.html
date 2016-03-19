@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>This is the new site</title>
+    <script src="react.min.js"></script>
+    <script src="react-dom.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/0.13.3/JSXTransformer.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <div id="content"></div>
+    <script type="text/jsx">
+    var count = 0;
+    var TaskInput = React.createClass({
+      getInitialState: function(){
+        return {
+          text: ''
+        };
+      },
+      onUserInput: function(){
+        this.setState({text: this.refs.taskInput.value});
+      },
+      submit: function(event){
+        if (event.keyCode == 13){
+          this.props.onSubmit(this.refs.taskInput.value);
+          this.setState({text: ''});
+        }
+      },
+      render: function(){
+        return <input type="text" placeholder="What needs to be done?" onKeyDown={this.submit} ref="taskInput" value={this.state.text} onChange={this.onUserInput} />
+      }
+    });
+    var Task = React.createClass({
+      handleDone: function(){
+        this.props.update("done", this.props.id);
+      },
+
+      handleCancel: function(){
+        this.props.update("cancelled", this.props.id);
+      },
+
+      render: function(){
+        var output;
+        if (this.props.taskState == 'pending'){
+          output = <div>
+                    <input type="checkbox" checked={this.props.checked} ref="doneInput" onChange={this.handleDone}/>
+                    {this.props.taskName}
+                    <button onClick={this.handleCancel}>Delete</button>
+                  </div>;
+        }
+        else if(this.props.taskState == 'done'){
+          output = <div>
+                    {this.props.taskName}
+                    <button onClick={this.handleCancel}>Delete</button>
+                  </div>;
+        }
+        else{
+          output = <div>
+                    {this.props.taskName}
+                  </div>;
+        }
+        return (output);
+      }
+    });
+
+    var TaskList = React.createClass({
+      render: function(){
+         var taskListRender = [];
+         this.props.tasks.forEach(function(taskDetails){
+           var a = (<Task taskName={taskDetails.name} id={taskDetails.id} checked={taskDetails.done} update={this.props.onUpdate} taskState={this.props.taskStatus}/>);
+           if (taskDetails.taskStatus == this.props.taskStatus){
+            taskListRender.push(a);
+           }
+         }.bind(this));
+         return (<div>{taskListRender}</div>);
+       }
+     });
+
+     var CategoryButtons = React.createClass({
+       handleCategory: function(categoryName){
+         this.props.onSubmitCategory(categoryName);
+       },
+
+       render: function(){
+         return(
+           <div>
+            <button onClick={this.handleCategory.bind(this, 'pending')}>Pending</button>
+            <button onClick={this.handleCategory.bind(this, 'done')}>Done</button>
+            <button onClick={this.handleCategory.bind(this, 'cancelled')}>Deleted</button>
+           </div>
+         );
+       }
+     });
+
+    var TodoList = React.createClass({
+      getInitialState: function(){
+        return {
+          tasksList: [],
+          taskStatus: 'pending'
+        };
+      },
+
+      onTaskSubmit: function(taskName){
+        var newTask = {
+          name: taskName,
+          id: count,
+          done: false,
+          cancelled: false,
+          taskStatus: "pending"
+        };
+
+        var tasksArrayCopy = this.state.tasksList.map(function(task){
+          return task;
+        });
+
+        count++;
+        tasksArrayCopy.push(newTask);
+        this.setState({tasksList: tasksArrayCopy});
+      },
+
+      onTaskUpdate: function(property, id){
+        var tasksArrayCopy = this.state.tasksList.map(function(task){
+          return task;
+        });
+        if (property == "done"){
+          tasksArrayCopy[id].done = true;
+          tasksArrayCopy[id].taskStatus = 'done';
+        }
+        else{
+          tasksArrayCopy[id].cancelled = true;
+          tasksArrayCopy[id].taskStatus = 'cancelled';
+        }
+        this.setState({tasksList: tasksArrayCopy});
+      },
+
+      onCategorySubmit: function(category){
+        this.setState({taskStatus: category});
+      },
+
+      render: function(){
+        return (
+          <div>
+          <TaskInput onSubmit={this.onTaskSubmit}/>
+          <TaskList tasks={this.state.tasksList} onUpdate={this.onTaskUpdate} taskStatus={this.state.taskStatus}/>
+          <CategoryButtons onSubmitCategory={this.onCategorySubmit} />
+        </div>);
+      }
+    });
+
+    ReactDOM.render(<TodoList />, document.getElementById('content'));
+    </script>
+  </body>
+</html>
